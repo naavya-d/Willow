@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat - Willow</title>
+  <link href="/static/styles.css" rel="stylesheet">
+</head>
+
+<body>
+  <div class="page">
+    <div class="chat-card">
+
+      <div class="topbar">
+        <div class="brand">
+          <div class="badge">🌱</div>
+          <div>
+            <h1>Willow Chat</h1>
+          </div>
+        </div>
+        <a href="/">Home</a>
+      </div>
+
+      <div id="chatbox">
+        <div class="row">
+          <div class="avatar bot">W</div>
+          <div class="bubble bot">
+            Hi, I’m Willow. If you want, you can tell me what’s been on your mind today.
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-row">
+          <input id="userInput" type="text" placeholder="Type your message..." autocomplete="off">
+          <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+        <div class="note">
+          If you feel unsafe or need urgent help, use the <a href="/help">Helplines</a> page.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const chatbox = document.getElementById('chatbox');
+    const inputField = document.getElementById('userInput');
+
+    inputField.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            sendMessage();
+        }
+    });
+
+    async function sendMessage() {
+
+      const text = inputField.value.trim();
+      if (text === "") return;
+
+
+      chatbox.innerHTML += `
+        <div class="row user">
+          <div class="bubble user">${text}</div>
+          <div class="avatar user">You</div>
+        </div>
+      `;
+      inputField.value = "";
+      scrollToBottom();
+
+
+      const loadingId = "loading-" + Date.now();
+      chatbox.innerHTML += `
+        <div class="row" id="${loadingId}">
+          <div class="avatar bot">W</div>
+          <div class="bubble bot">...</div>
+        </div>
+      `;
+      scrollToBottom();
+
+      try {
+
+        const response = await fetch('/get_response', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ msg: text })
+        });
+
+
+        const data = await response.json();
+
+
+        const loadingRow = document.getElementById(loadingId);
+        if (loadingRow) loadingRow.remove();
+
+
+        chatbox.innerHTML += `
+          <div class="row">
+            <div class="avatar bot">W</div>
+            <div class="bubble bot">${data.reply}</div>
+          </div>
+        `;
+        scrollToBottom();
+
+      } catch (error) {
+
+        const loadingRow = document.getElementById(loadingId);
+        if (loadingRow) {
+          loadingRow.querySelector(".bubble").innerText = "Error connecting to Willow.";
+        }
+      }
+    }
+
+
+    function scrollToBottom() {
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+</script>
+</body>
+</html>
